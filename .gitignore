@@ -3,6 +3,20 @@
 .env.*
 !.env.example
 
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+
 # --- Frontend (Node / Vite) ---
 node_modules/
 dist/

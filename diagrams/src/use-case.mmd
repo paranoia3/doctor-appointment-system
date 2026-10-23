@@ -1,0 +1,55 @@
+%% Use case diagram. All human roles also use "Register / log in" (shown once for the patient).
+flowchart LR
+  PAT(["Patient"])
+  DOC(["Doctor"])
+  ADM(["Clinic administrator"])
+  SUP(["Super administrator"])
+  CRON(["Scheduler (time)"])
+
+  subgraph SYS["Online Doctor Appointment System"]
+    direction LR
+    subgraph GP["Patient use cases"]
+      direction TB
+      UC1(["Register / log in"])
+      UC2(["Manage family profiles"])
+      UC3(["Search doctors and clinics"])
+      UC4(["Find nearest free slot"])
+      UC5(["Book appointment"])
+      UC11(["Hold slot for 5 min"])
+      UC6(["Cancel / reschedule"])
+      UC7(["View referrals"])
+      UC8(["Book with referral"])
+      UC12(["Check active referral"])
+      UC9(["Join waitlist"])
+      UC10(["Watch live queue"])
+    end
+    subgraph GD["Doctor use cases"]
+      direction TB
+      UC13(["View day / week schedule"])
+      UC14(["Open patient card"])
+      UC15(["Issue referral"])
+      UC16(["Start / finish appointment"])
+    end
+    subgraph GA["Administration use cases"]
+      direction TB
+      UC17(["Manage doctors, rooms,<br/>schedules, vacations"])
+      UC18(["View analytics"])
+      UC19(["Manage clinics,<br/>specialties, users"])
+    end
+    subgraph GS["Automatic use cases"]
+      direction TB
+      UC20(["Send reminders"])
+      UC21(["Expire referrals"])
+      UC22(["Offer freed slot to waitlist"])
+    end
+  end
+
+  PAT --- UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7 & UC8 & UC9 & UC10
+  DOC --- UC13 & UC14 & UC15 & UC16
+  ADM --- UC17 & UC18
+  SUP --- UC19
+  CRON --- UC20 & UC21 & UC22
+
+  UC5 -.->|include| UC11
+  UC8 -.->|include| UC12
+  UC4 -.->|extend| UC9

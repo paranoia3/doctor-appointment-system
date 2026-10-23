@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Прототип — Запись к врачу</title>
+<style>
+  :root {
+    --bg: #f4f7f8; --card: #ffffff; --ink: #14232b; --muted: #5d6f78; --line: #dde6ea;
+    --brand: #0b7a75; --brand-soft: #e0f2f0; --warn: #b4531a; --warn-soft: #fbeadf;
+    --ok: #237a3b; --ok-soft: #e1f3e5; --blue: #2d5bd3; --blue-soft: #e6ecfb; --red: #b42318; --red-soft: #fde8e6;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, Arial, sans-serif; }
+  header { background: var(--card); border-bottom: 1px solid var(--line); padding: 12px 24px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .logo { font-weight: 700; font-size: 16px; color: var(--brand); }
+  nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  nav a { padding: 7px 12px; border-radius: 8px; color: var(--muted); text-decoration: none; font-weight: 600; }
+  nav a.on { background: var(--brand-soft); color: var(--brand); }
+  .who { margin-left: auto; color: var(--muted); font-size: 13px; }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .card h2 { font-size: 15px; margin: 0 0 12px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  label.f { display: grid; gap: 4px; font-size: 12px; color: var(--muted); font-weight: 600; }
+  .input { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 190px; background: #fff; font: inherit; color: var(--ink); }
+  .chip { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-weight: 600; color: var(--muted); background: #fff; }
+  .chip.on { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
+  .btn { border: 0; border-radius: 8px; padding: 9px 14px; font: 600 14px inherit; background: var(--brand); color: #fff; cursor: pointer; }
+  .btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+  .btn.small { padding: 6px 10px; font-size: 13px; }
+  .tag { display: inline-block; border-radius: 6px; padding: 2px 8px; font-size: 12px; font-weight: 600; }
+  .t-ok { background: var(--ok-soft); color: var(--ok); } .t-warn { background: var(--warn-soft); color: var(--warn); }
+  .t-blue { background: var(--blue-soft); color: var(--blue); } .t-red { background: var(--red-soft); color: var(--red); }
+  .t-grey { background: #eef2f4; color: var(--muted); }
+  .slot { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 10px; margin-top: 10px; }
+  .slot.best { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand) inset; }
+  .rank { width: 54px; height: 54px; border-radius: 10px; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; font-weight: 700; font-size: 18px; }
+  .slot .t { font-weight: 700; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .bars { display: flex; gap: 12px; margin-top: 6px; font-size: 12px; color: var(--muted); }
+  .bars b { color: var(--ink); }
+  .map { height: 300px; border-radius: 10px; background: linear-gradient(135deg, #e7f0ee, #f3f6f1); position: relative; overflow: hidden; border: 1px solid var(--line); }
+  .map .road { position: absolute; background: #fff; }
+  .pin { position: absolute; transform: translate(-50%, -100%); background: var(--brand); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 6px; white-space: nowrap; }
+  .pin.me { background: var(--blue); }
+  .ref { border: 1px dashed var(--brand); background: var(--brand-soft); border-radius: 10px; padding: 10px 12px; margin-top: 12px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-size: 12px; font-weight: 600; }
+  .tl { display: grid; gap: 8px; }
+  .tl .it { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .tl .it.now { border-color: var(--blue); background: var(--blue-soft); }
+  .time { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .modal-wrap { position: fixed; inset: 0; background: rgba(15, 30, 35, .45); display: none; place-items: center; padding: 16px; }
+  .modal-wrap.open { display: grid; }
+  .modal { background: #fff; border-radius: 14px; padding: 20px; width: min(440px, 100%); }
+  .timer { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--warn); }
+  .q-big { font-size: 64px; font-weight: 800; color: var(--brand); line-height: 1; }
+  .screen { display: none; } .screen.on { display: block; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 16px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Запись к врачу</div>
+  <nav>
+    <a href="#search" data-s="search">1. Подбор слота</a>
+    <a href="#cabinet" data-s="cabinet">2. Кабинет пациента</a>
+    <a href="#doctor" data-s="doctor">3. Кабинет врача</a>
+    <a href="#queue" data-s="queue">4. Живая очередь</a>
+  </nav>
+  <div class="who" id="who">Пациент: Айдана С. · RU / KZ</div>
+</header>
+
+<main>
+  <!-- 1. Nearest slot search -->
+  <section class="screen" id="s-search">
+    <h1>Записаться к врачу</h1>
+    <p class="sub">Выберите специальность — система сама найдёт 5 лучших свободных слотов во всех клиниках.</p>
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="row">
+            <label class="f">Специальность<select class="input"><option>Эндокринолог</option></select></label>
+            <label class="f">Для кого<select class="input"><option>Я — Айдана С.</option><option>Сын — Алихан, 7 лет</option></select></label>
+            <label class="f">Откуда<input class="input" value="ул. Абая, 150"></label>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <span class="meta">Удобное время:</span>
+            <span class="chip">Утро</span><span class="chip on">День</span><span class="chip">Вечер</span>
+          </div>
+          <div class="ref"><b>Активное направление:</b> эндокринолог, выписано терапевтом Ахметовой А.Б., код E11.9, действует до 21.11.2026. Без направления запись к этому специалисту недоступна.</div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <h2>Лучшие варианты</h2>
+          <div class="slot best">
+            <div class="rank">1</div>
+            <div><div class="t">Пт, 24 окт · 14:20 <span class="tag t-ok">Лучший вариант</span></div>
+              <div class="meta">Нурланова Г.К., эндокринолог · Поликлиника «Шуақ» (демо)</div>
+              <div class="bars">Ожидание <b>1 день</b> · Расстояние <b>2,3 км</b> · Время <b>в удобном окне</b></div></div>
+            <button class="btn" data-book>Записаться</button>
+          </div>
+          <div class="slot">
+            <div class="rank">2</div>
+            <div><div class="t">Пт, 24 окт · 09:40</div>
+              <div class="meta">Оспанов Е.Т., эндокринолог · Медцентр «Береке» (демо)</div>
+              <div class="bars">Ожидание <b>1 день</b> · Расстояние <b>5,8 км</b> · Время <b>утро</b></div></div>
+            <button class="btn ghost" data-book>Записаться</button>
+          </div>
+          <div class="slot">
+            <div class="rank">3</div>
+            <div><div class="t">Пн, 27 окт · 15:00</div>
+              <div class="meta">Нурланова Г.К., эндокринолог · Поликлиника «Шуақ» (демо)</div>
+              <div class="bars">Ожидание <b>4 дня</b> · Расстояние <b>2,3 км</b> · Время <b>в удобном окне</b></div></div>
+            <button class="btn ghost" data-book>Записаться</button>
+          </div>
+          <div class="slot">
+            <div class="rank">4</div>
+            <div><div class="t">Чт, 23 окт · 18:10</div>
+              <div class="meta">Ким Д.В., эндокринолог · Клиника «Орбита» (демо)</div>
+              <div class="bars">Ожидание <b>сегодня</b> · Расстояние <b>11,4 км</b> · Время <b>вечер</b></div></div>
+            <button class="btn ghost" data-book>Записаться</button>
+          </div>
+          <div class="row" style="margin-top:12px"><span class="meta">Нет подходящего времени?</span><button class="btn ghost small">Встать в лист ожидания</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Клиники на карте</h2>
+        <div class="map">
+          <div class="road" style="left:0;right:0;top:45%;height:10px"></div>
+          <div class="road" style="top:0;bottom:0;left:38%;width:10px"></div>
+          <div class="road" style="top:0;bottom:0;left:72%;width:8px"></div>
+          <span class="pin me" style="left:30%;top:58%">Вы</span>
+          <span class="pin" style="left:45%;top:35%">1 · 2,3 км</span>
+          <span class="pin" style="left:70%;top:72%">2 · 5,8 км</span>
+          <span class="pin" style="left:88%;top:22%">4 · 11,4 км</span>
+        </div>
+        <p class="note">Слоты отсортированы по оценке: время ожидания, расстояние и удобство времени.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Patient cabinet -->
+  <section class="screen" id="s-cabinet">
+    <h1>Мой кабинет</h1>
+    <p class="sub">Записи и направления — ваши и членов семьи.</p>
+    <div class="grid">
+      <div>
+        <div class="card">
+          <h2>Ближайшие записи</h2>
+          <table>
+            <tr><th>Когда</th><th>Врач</th><th>Статус</th><th></th></tr>
+            <tr><td><b>Пт, 24 окт · 14:20</b></td><td>Нурланова Г.К., эндокринолог<br><span class="meta">Поликлиника «Шуақ», каб. 307 · по направлению</span></td><td><span class="tag t-ok">Записан</span></td><td class="row"><button class="btn ghost small">Перенести</button><button class="btn ghost small">Отменить</button></td></tr>
+            <tr><td><b>Вт, 28 окт · 10:00</b></td><td>Сейткали М.Р., педиатр<br><span class="meta">Для: Алихан, 7 лет</span></td><td><span class="tag t-ok">Записан</span></td><td class="row"><button class="btn ghost small">Перенести</button><button class="btn ghost small">Отменить</button></td></tr>
+          </table>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <h2>Направления</h2>
+          <table>
+            <tr><th>Куда</th><th>Выписал</th><th>Действует до</th><th>Статус</th><th></th></tr>
+            <tr><td>Эндокринолог</td><td>Ахметова А.Б., терапевт</td><td>21.11.2026</td><td><span class="tag t-blue">Использовано</span></td><td class="meta">запись 24 окт</td></tr>
+            <tr><td>Общий анализ крови</td><td>Ахметова А.Б., терапевт</td><td>05.11.2026</td><td><span class="tag t-warn">Выписано</span></td><td><button class="btn small">Записаться</button></td></tr>
+            <tr><td>Кардиолог</td><td>Ахметова А.Б., терапевт</td><td>01.09.2026</td><td><span class="tag t-grey">Истекло</span></td><td></td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Маршрут по направлению <span class="tag t-grey">v2</span></h2>
+        <div class="tl">
+          <div class="it"><div class="time">27 окт<br>08:30</div><div><b>Анализ крови</b><div class="meta">Лаборатория «Шуақ», результат через 1 день</div></div><span class="tag t-grey">шаг 1</span></div>
+          <div class="it"><div class="time">29 окт<br>11:00</div><div><b>Эндокринолог</b><div class="meta">Нурланова Г.К., та же клиника</div></div><span class="tag t-grey">шаг 2</span></div>
+        </div>
+        <button class="btn" style="margin-top:12px;width:100%">Записаться на весь маршрут</button>
+        <p class="note">Каждый шаг ставится не раньше, чем готов результат предыдущего.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Doctor cabinet -->
+  <section class="screen" id="s-doctor">
+    <h1>Расписание на четверг, 23 октября</h1>
+    <p class="sub">Ахметова А.Б., терапевт · Поликлиника «Шуақ», кабинет 214</p>
+    <div class="grid">
+      <div class="card">
+        <div class="tl">
+          <div class="it"><div class="time">09:00</div><div><b>Пациент Б-1043</b><div class="meta">Повторный приём</div></div><span class="tag t-ok">Завершён</span></div>
+          <div class="it"><div class="time">09:20</div><div><b>Пациент Б-2210</b><div class="meta">Первичный приём</div></div><span class="tag t-red">Не явился</span></div>
+          <div class="it now"><div class="time">09:40</div><div><b>Айдана С., 34 года</b><div class="meta">Жалобы: слабость, жажда</div></div><div class="row"><span class="tag t-blue">Идёт приём</span><button class="btn small">Завершить</button></div></div>
+          <div class="it"><div class="time">10:00</div><div><b>Пациент Б-0877</b><div class="meta">В очереди, отметился 09:52</div></div><button class="btn ghost small">Начать</button></div>
+          <div class="it"><div class="time">10:20</div><div><b>Пациент Б-3391</b><div class="meta">Ожидается</div></div><button class="btn ghost small">Начать</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Карточка пациента</h2>
+        <div><b>Айдана С.</b> · ИИН 9204******31</div>
+        <table style="margin-top:8px">
+          <tr><th>Дата</th><th>Визит</th></tr>
+          <tr><td>12.06.2026</td><td>Терапевт — ОРВИ</td></tr>
+          <tr><td>03.02.2026</td><td>Окулист — осмотр</td></tr>
+        </table>
+        <h2 style="margin-top:16px">Выписать направление</h2>
+        <div style="display:grid;gap:10px">
+          <label class="f">Куда<select class="input"><option>Эндокринолог</option></select></label>
+          <label class="f">Диагноз (МКБ-10)<input class="input" value="E11.9"></label>
+          <label class="f">Срок действия<select class="input"><option>30 дней</option></select></label>
+          <button class="btn">Выписать</button>
+        </div>
+        <p class="note">Просмотр карточки записывается в журнал доступа.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Live queue -->
+  <section class="screen" id="s-queue">
+    <h1>Живая очередь</h1>
+    <p class="sub">Кабинет 214 · Ахметова А.Б., терапевт · обновляется автоматически</p>
+    <div class="grid">
+      <div class="card" style="text-align:center;padding:32px">
+        <div class="meta">Ваше место в очереди</div>
+        <div class="q-big">3</div>
+        <div style="margin-top:12px;font-size:16px">Примерное время приёма: <b>10:20</b></div>
+        <div class="meta" style="margin-top:6px">Врач задерживается на 5 минут</div>
+        <div class="row" style="justify-content:center;margin-top:20px"><span class="tag t-ok">Вы отметились в 09:58</span></div>
+      </div>
+      <div class="card">
+        <h2>Сейчас</h2>
+        <div class="tl">
+          <div class="it now"><div class="time">09:40</div><div><b>Идёт приём</b><div class="meta">начат в 09:42</div></div><span class="tag t-blue">1</span></div>
+          <div class="it"><div class="time">10:00</div><div><b>Следующий</b><div class="meta">в очереди</div></div><span class="tag t-grey">2</span></div>
+          <div class="it" style="border-color:var(--brand)"><div class="time">10:20</div><div><b>Вы</b><div class="meta">≈ через 25 мин</div></div><span class="tag t-ok">3</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="note">Прототип ключевых сценариев. Данные демонстрационные.</p>
+</main>
+
+<div class="modal-wrap" id="modal">
+  <div class="modal">
+    <h2 style="margin:0 0 6px;font-size:18px">Подтвердите запись</h2>
+    <p class="meta" style="margin:0 0 12px">Слот удержан за вами на <span class="timer">04:59</span></p>
+    <div><b>Пт, 24 октября · 14:20</b></div>
+    <div class="meta">Нурланова Г.К., эндокринолог · Поликлиника «Шуақ», каб. 307</div>
+    <div class="ref">По направлению: эндокринолог, E11.9</div>
+    <p class="meta">Напомним по email за 24 часа и за 2 часа до приёма.</p>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Отмена</button><button class="btn" data-close>Подтвердить</button></div>
+  </div>
+</div>
+
+<script>
+  const who = { search: 'Пациент: Айдана С.', cabinet: 'Пациент: Айдана С.', doctor: 'Врач: Ахметова А.Б.', queue: 'Пациент: Айдана С.' };
+  function show() {
+    const raw = (location.hash || '#search').slice(1);
+    const name = raw.replace('-modal', '');
+    const id = who[name] ? name : 'search';
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === 's-' + id));
+    document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.dataset.s === id));
+    document.getElementById('who').textContent = who[id] + ' · RU / KZ';
+    document.getElementById('modal').classList.toggle('open', raw === 'search-modal');
+  }
+  window.addEventListener('hashchange', show);
+  document.querySelectorAll('[data-book]').forEach(b => b.addEventListener('click', () => document.getElementById('modal').classList.add('open')));
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => document.getElementById('modal').classList.remove('open')));
+  show();
+</script>
+</body>
+</html>

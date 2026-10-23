@@ -1,0 +1,32 @@
+sequenceDiagram
+  actor P as Patient
+  participant W as Web app
+  participant A as REST API
+  participant R as Redis
+  participant D as PostgreSQL
+  participant C as Celery
+
+  P->>W: Choose specialty
+  W->>A: GET /slots/nearest?specialty, location
+  A->>D: Doctors, schedules, exceptions, appointments
+  A-->>W: Top-5 ranked slots
+  P->>W: Select a slot
+  W->>A: POST /slots/hold
+  A->>R: SET hold:doctor:start NX EX 300
+  alt Slot already held
+    A-->>W: 409 Slot is being booked
+  else Hold created
+    A-->>W: Hold id (5 minutes)
+    P->>W: Confirm booking
+    W->>A: POST /appointments
+    A->>D: BEGIN, SELECT ... FOR UPDATE, INSERT
+    alt Overlap rejected by exclusion constraint
+      D-->>A: Constraint violation
+      A-->>W: 409 Choose another slot
+    else Saved
+      D-->>A: COMMIT
+      A->>R: DEL hold
+      A->>C: Send confirmation, schedule reminders
+      A-->>W: 201 Booked
+    end
+  end

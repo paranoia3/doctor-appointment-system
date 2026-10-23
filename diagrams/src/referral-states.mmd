@@ -1,0 +1,10 @@
+stateDiagram-v2
+  [*] --> Issued: Doctor issues referral
+  Issued --> Used: Patient books with referral
+  Used --> Issued: Appointment cancelled, referral still valid
+  Used --> Closed: Appointment completed
+  Issued --> Expired: Validity period passed (daily job)
+  Issued --> Cancelled: Issuing doctor cancels
+  Closed --> [*]
+  Expired --> [*]
+  Cancelled --> [*]

@@ -1,6 +1,6 @@
 # Online Doctor Appointment System with Electronic Referrals and Nearest-Slot Selection
 
-A web system where a patient books a doctor's appointment in 1–2 minutes: the system automatically finds the nearest suitable free slot and manages electronic referrals from doctor to doctor.
+A web system where a patient books a doctor's appointment in 1–2 minutes: the system finds the nearest suitable free slot across doctors and clinics, manages electronic referrals from doctor to doctor and reduces losses from missed appointments.
 
 > **Official topic:** Development of an online doctor appointment system with electronic referrals and selection of the nearest free time.
 
@@ -11,9 +11,12 @@ A web system where a patient books a doctor's appointment in 1–2 minutes: the 
 1. [Problem Statement, Target Users, Expected Outcomes](#1-problem-statement-target-users-expected-outcomes)
 2. [Team and Supervisor](#2-team-and-supervisor)
 3. [Project Scope and Current Status](#3-project-scope-and-current-status)
-4. [Selected Technologies](#4-selected-technologies)
-5. [Links](#5-links)
-6. [Setup, Execution and Testing](#6-setup-execution-and-testing)
+4. [Pre-defense documentation](#4-pre-defense-documentation)
+5. [Selected Technologies](#5-selected-technologies)
+6. [Repository Structure](#6-repository-structure)
+7. [Links](#7-links)
+8. [Development Workflow](#8-development-workflow)
+9. [Setup, Execution and Testing](#9-setup-execution-and-testing)
 
 ---
 
@@ -21,7 +24,11 @@ A web system where a patient books a doctor's appointment in 1–2 minutes: the 
 
 ### Problem statement
 
-Existing appointment systems in Kazakhstan (Damumed, eGov, private clinic portals) make patients browse doctors one by one and manually look for free time. They rarely take the distance to the clinic into account, handle referrals between specialists poorly, and do nothing to reduce no-shows. As a result patients lose time, and clinics lose capacity to missed appointments.
+Online booking already exists in Kazakhstan, but it is organized around one doctor in one clinic. Our comparison of five systems ([`docs/04-existing-systems.md`](docs/04-existing-systems.md)) and interviews with three medical workers and three patients ([`docs/02-relevance.md`](docs/02-relevance.md)) show three problems:
+
+- **Finding free time is manual.** State services book only with the clinic of attachment; patients refresh apps for days to catch a freed slot with a specialist.
+- **Referrals are not connected to booking.** Referrals expire (30 days) while patients wait for a specialist, and this is found out only at the visit.
+- **Missed appointments are not handled.** 2–4 of 15 patients per day do not come (reported by a specialist); freed time is lost and does not reach patients on a waitlist.
 
 ### Target users
 
@@ -34,21 +41,23 @@ Existing appointment systems in Kazakhstan (Damumed, eGov, private clinic portal
 
 ### Expected outcomes
 
-- Booking in 1–2 minutes with automatic selection of the 5 best slots (by waiting time, distance and time-of-day convenience).
-- Guaranteed protection against double booking (Redis hold + transactional row lock + PostgreSQL exclusion constraint).
-- Electronic referrals with a full lifecycle: *Issued → Used → Closed*, or *Expired / Cancelled*; narrow specialists are bookable only with an active referral.
-- Measurable improvement over a naive "earliest slot" approach (average waiting time and distance), evaluated experimentally.
-- Reduced no-shows through ML-based risk prediction and extra reminders.
+- Booking in 1–2 minutes with automatic selection of the 5 best slots across doctors and clinics (waiting time, distance, time-of-day convenience), compared experimentally with an "earliest slot" baseline.
+- No double booking: 100 concurrent requests for one slot produce exactly one appointment (Redis hold + row lock + PostgreSQL exclusion constraint).
+- Electronic referrals with a lifecycle (*Issued → Used → Closed*, *Expired*, *Cancelled*); narrow specialists are bookable only with an active referral.
+- Waitlist and reminders that return freed slots to patients who need them.
+- *(v2, if time permits)* Patient route "test → result → specialist" and ML-based no-show prediction.
+
+Full measurable targets: [`docs/01-proposal.md`](docs/01-proposal.md#15-expected-outcomes).
 
 ---
 
 ## 2. Team and Supervisor
 
-| Member | Role | Responsibilities |
-|--------|------|------------------|
-| Yerkegali Yergali | Backend developer | DB models and migrations, exclusion constraint, authentication and roles, slot generation and nearest-slot algorithm, booking/cancel/reschedule/hold, referrals and statuses, patient route, WebSocket queue, Celery tasks, ML no-show model, Telegram bot, Django admin, backend and load tests |
-| Aigerim Askarova | Frontend developer | Figma mockups, registration/login/profiles, doctor search, filters and clinic map, slot selection and booking calendar, patient and doctor cabinets, live queue screen, admin analytics dashboard, KZ/RU localization, responsive layout, API mocks (MSW), E2E tests |
-| **Both** | — | Analysis of existing systems, API contract (Swagger), repository / Docker Compose / Git rules, test data (5 clinics, 30 doctors, 200 patients), demo scenarios |
+| Member | GitHub | Role | Responsibilities |
+|--------|--------|------|------------------|
+| Yerkegali Yergali | `paranoia3` | Backend developer | Data model, API, slot algorithm, booking and double-booking protection, referrals, background jobs, live queue (server), ML no-show model, load tests |
+| Aigerim Askarova | `aigerimaskarova11` | Frontend developer | Mockups and prototype, patient / doctor / administrator interfaces, map, live queue screen, analytics dashboard, KZ/RU localization, E2E tests |
+| Both | — | — | Analysis of existing systems, interviews, API contract, test data, demo scenarios, report |
 
 **Supervisor:** Сарсенова Жибек Нуржановна (Sarsenova Zhibek Nurzhanovna)
 
@@ -58,107 +67,125 @@ Existing appointment systems in Kazakhstan (Damumed, eGov, private clinic portal
 
 ### Scope
 
-Features are split into three priority levels:
+- **MVP** (first demo, end of December 2026): registration and login (IIN or phone, JWT), clinic and doctor catalog, nearest-slot search, booking / cancellation / rescheduling, referrals with statuses and expiry, referral-gated booking, doctor schedule, email reminders, administration of doctors and schedules.
+- **v1** (pre-defense): family profiles, clinic map, waitlist, start / finish appointment, live queue, analytics dashboard, Kazakh and Russian interface.
+- **v2** (if time permits): patient route, Telegram bot, automatic rescheduling when a doctor is ill, no-show prediction, QR check-in.
+- **Out of scope:** payments, telemedicine, integration with real national systems; the demo uses synthetic data.
 
-- **MVP** — minimum working version for the first demo to the supervisor
-  - Registration/login by IIN or phone (JWT), password recovery
-  - Clinic and doctor catalog with filters (specialty, clinic, language)
-  - Nearest free slot search by specialty
-  - Booking, cancellation and rescheduling with confirmation
-  - Referrals: issuing, "narrow specialist only by active referral", statuses and automatic expiry
-  - Doctor cabinet: daily/weekly schedule, patient card with visit history
-  - Email reminders (24 h and 2 h before)
-  - Administration: doctors, rooms, schedules, vacations
-- **v1** — full version for the pre-defense
-  - Family profiles, clinic map with distance sorting, waitlist
-  - "Start/finish appointment" buttons, live queue (WebSocket)
-  - Analytics dashboard, Kazakh and Russian interface
-- **v2** — extras for the final defense (if time permits)
-  - Patient route ("test → result → specialist"), Telegram bot
-  - Automatic rescheduling when a doctor is ill, ML no-show prediction, QR check-in
+Interviews suggest moving the waitlist to MVP and automatic rescheduling to v1; this is to be agreed with the supervisor ([`docs/02-relevance.md`](docs/02-relevance.md#24-conclusion)).
 
-### Key algorithms
-
-1. **Nearest slot selection** — score = `w1·T + w2·D + w3·P` (waiting time, distance, inconvenient-time penalty; normalized 0–1; initial weights 0.6 / 0.3 / 0.1, tuned experimentally).
-2. **Double-booking protection** — 5-minute Redis hold, transaction with `SELECT … FOR UPDATE`, PostgreSQL exclusion constraint.
-3. **Referral lifecycle** — automatic status transitions by events and schedule (Celery).
-4. **Patient route** — chained steps respecting result-readiness time, same-clinic/same-day merging.
-5. **No-show prediction** — logistic regression, Random Forest, XGBoost compared by ROC-AUC, Recall, F1.
-
-### Non-functional targets
-
-- Nearest-slot search ≤ 1 s (100 doctors, 14-day horizon); 95% of API requests ≤ 500 ms for up to 200 concurrent users
-- HTTPS, password hashing, JWT (access 15 min / refresh 7 days), role-based access, audit log of medical data access, IIN masking, compliance with the Law of the Republic of Kazakhstan on personal data
-- Responsive layout from 360 px; latest Chrome, Safari, Firefox, Edge
-- Backend test coverage ≥ 70%; one-command startup via Docker Compose
-
-### Current development status
+### Current status (pre-defense 1, October 2026)
 
 | Stage | Status |
 |-------|--------|
-| Technical specification | Draft, v0.1 (29 Sep 2026) |
-| Analysis of existing systems | Planned |
-| Architecture, DB and API design | Planned |
-| Implementation | Not started |
-| Target | Working MVP by the end of December |
-
+| Proposal, evidence of relevance (6 interviews), literature review (21 sources) | Done |
+| Existing system comparison (5 systems, hands-on tests), technology comparison | Done |
+| Requirements with acceptance criteria | Done |
+| Architecture and diagrams (context, use case, component, ER, sequence, states) | Done |
+| Clickable prototype of key scenarios | Done |
+| Verification and evaluation plan, milestones and risks | Done |
+| Supervisor feedback | Requested on 23 Oct 2026, awaiting reply |
+| Implementation | Not started — next milestone M2 (mid-November 2026) |
 
 ---
 
-## 4. Selected Technologies
+## 4. Pre-defense documentation
+
+| # | Section | Document |
+|---|---------|----------|
+| 1 | Project proposal | [`docs/01-proposal.md`](docs/01-proposal.md) |
+| 2 | Evidence of relevance | [`docs/02-relevance.md`](docs/02-relevance.md), protocols in [`docs/interviews/`](docs/interviews/) |
+| 3 | Literature review | [`docs/03-literature.md`](docs/03-literature.md) |
+| 4 | Existing system comparison | [`docs/04-existing-systems.md`](docs/04-existing-systems.md), screenshots in [`docs/screenshots/existing-systems/`](docs/screenshots/existing-systems/) |
+| 5 | Technology comparison | [`docs/05-technologies-backend.md`](docs/05-technologies-backend.md), [`docs/05-technologies-frontend.md`](docs/05-technologies-frontend.md) |
+| 6 | Requirements specification | [`docs/06-requirements.md`](docs/06-requirements.md) |
+| 7 | Architecture and diagrams | [`docs/07-architecture.md`](docs/07-architecture.md), sources in [`diagrams/src/`](diagrams/src/), images in [`diagrams/png/`](diagrams/png/) |
+| 8 | UX prototype | [`docs/08-prototype.md`](docs/08-prototype.md), prototype [`src/frontend/prototype/index.html`](src/frontend/prototype/index.html) |
+| 9 | Verification and evaluation plan | [`docs/09-evaluation-plan.md`](docs/09-evaluation-plan.md) |
+| 10 | Project management and risks | [`docs/10-management.md`](docs/10-management.md) |
+| 11 | Supervisor feedback | [`docs/11-supervisor-feedback.md`](docs/11-supervisor-feedback.md) |
+
+---
+
+## 5. Selected Technologies
 
 | Layer | Technologies |
 |-------|--------------|
-| Frontend | React, TypeScript, Vite, Ant Design or shadcn/ui, TanStack Query, Zustand, FullCalendar, Recharts, react-i18next |
-| Maps | 2GIS API or Leaflet |
+| Frontend | React, TypeScript, Vite, TanStack Query, Zustand, FullCalendar, Recharts, react-i18next |
+| Maps | 2GIS API or Leaflet (decision in the frontend technology comparison) |
 | Backend | Python, Django, Django REST Framework, simplejwt, drf-spectacular (Swagger) |
 | Real time | Django Channels (WebSocket) |
 | Background tasks | Celery + Celery Beat |
-| Database | PostgreSQL |
-| Cache / broker | Redis |
-| ML | pandas, scikit-learn, XGBoost (Kaggle "Medical Appointment No Shows" dataset for experiments) |
+| Database | PostgreSQL (exclusion constraint against overlapping appointments) |
+| Cache / broker | Redis (slot hold, cache, broker, channel layer) |
+| ML | pandas, scikit-learn, XGBoost |
 | Telegram bot | aiogram |
 | Infrastructure | Docker Compose, GitHub, GitHub Actions, Sentry |
-| Testing | pytest (backend), Vitest and Playwright (frontend), Locust (load) |
+| Testing | pytest, Vitest, Playwright, Locust |
 
-The web app and the Telegram bot share one REST API (`/api/v1/`); the live queue uses WebSocket; Celery runs background jobs from the same Django codebase via Redis.
-
----
-
-## 5. Links
-
-- **YouTrack project:** _<add link>_
-- **Project documentation / technical specification:** _<add link>_
-- **API documentation (Swagger):** _<add link once available>_
-- **Design mockups (Figma):** _<add link>_
+Justification: [`docs/05-technologies-backend.md`](docs/05-technologies-backend.md), [`docs/05-technologies-frontend.md`](docs/05-technologies-frontend.md).
 
 ---
 
-## 6. Setup, Execution and Testing
+## 6. Repository Structure
 
-> Runnable code is not available yet. This section will be completed as soon as the first version of the backend and frontend is committed.
+```
+doctor-appointment-system/
+├── src/
+│   ├── backend/          # Django API, Celery, Channels (from M2)
+│   ├── frontend/         # React app; prototype/ — clickable prototype
+│   └── ml/               # no-show prediction (v2)
+├── docs/                 # pre-defense sections 01–11
+│   ├── interviews/       # interview guide and anonymized protocols
+│   ├── screenshots/      # evidence for the existing system comparison
+│   └── prototype/        # screenshots of the prototype
+├── diagrams/
+│   ├── src/              # editable diagram sources (Mermaid)
+│   └── png/              # exported images
+├── tests/
+│   └── load/             # load tests (Locust)
+├── .env.example          # configuration template with placeholder values
+└── README.md
+```
 
-Planned workflow (target, one command for the whole project):
+---
+
+## 7. Links
+
+- **Repository:** https://github.com/paranoia3/doctor-appointment-system
+- **YouTrack project (DIP):** https://yerkegali.youtrack.cloud/projects/DIP/issues?sort=id
+- **Prototype:** [`src/frontend/prototype/index.html`](src/frontend/prototype/index.html) — download and open in a browser; screenshots in [`docs/08-prototype.md`](docs/08-prototype.md)
+- **API documentation (Swagger):** available after milestone M2
+
+---
+
+## 8. Development Workflow
+
+- Every work item is a YouTrack task `DIP-N` with an assignee, priority, deadline and acceptance criteria.
+- Work happens in a branch named after the task (`DIP-N-short-name`); commit messages start with `DIP-N:`.
+- `main` is protected: changes only through pull requests with one approval from the other team member; force pushes and deletion are blocked.
+- Each pre-defense submission is tagged: `pre-defense-1`, `pre-defense-2`, `final-pre-defense`.
+
+---
+
+## 9. Setup, Execution and Testing
+
+> Runnable code is not available yet; implementation starts with milestone M2. This section will be updated with exact commands.
+
+Planned workflow (one command for the whole project):
 
 ```bash
-git clone <repository-url>
-cd <repository-folder>
-cp .env.example .env     
+git clone https://github.com/paranoia3/doctor-appointment-system.git
+cd doctor-appointment-system
+cp .env.example .env        # fill in the required variables
 docker compose up --build
 ```
 
 Planned testing commands:
 
 ```bash
-# Backend
-docker compose exec backend pytest --cov
-
-# Frontend
-cd frontend && npm run test        # Vitest
-cd frontend && npx playwright test # E2E
-
-# Load test (double booking: 100 concurrent requests, exactly 1 must succeed)
-locust -f loadtests/locustfile.py
+docker compose exec backend pytest --cov          # backend, coverage ≥ 70 %
+cd src/frontend && npm run test                   # frontend unit tests (Vitest)
+cd src/frontend && npx playwright test            # end-to-end tests
+locust -f tests/load/locustfile.py                # load test: 100 concurrent bookings → exactly 1 succeeds
 ```
-
-_Exact commands, ports and environment variables will be updated soon_

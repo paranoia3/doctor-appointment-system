@@ -1,0 +1,26 @@
+flowchart LR
+  PAT(["Patient<br/>(and family members)"])
+  DOC(["Doctor"])
+  ADM(["Clinic administrator"])
+  SUP(["Super administrator"])
+
+  SYS["Online Doctor Appointment System<br/>web app + REST API + background jobs"]
+
+  MAIL["Email server<br/>(SMTP)"]
+  TG["Telegram Bot API<br/>(v2)"]
+  MAP["Map service<br/>2GIS / Leaflet"]
+  SEN["Sentry<br/>error monitoring"]
+  DS["Public dataset<br/>Medical Appointment No Shows<br/>(offline, ML experiments)"]
+  NAT["Damumed, eGov<br/>(not integrated, out of scope)"]
+
+  PAT -->|search slots, book, cancel,<br/>referrals, live queue| SYS
+  DOC -->|schedule, patient card,<br/>issue referrals, start / finish| SYS
+  ADM -->|doctors, rooms, schedules,<br/>vacations, analytics| SYS
+  SUP -->|clinics, specialties, users| SYS
+
+  SYS -->|confirmations, reminders| MAIL
+  SYS <-->|reminders, confirmation, booking| TG
+  SYS -->|clinic locations| MAP
+  SYS -.->|errors| SEN
+  DS -.->|training data| SYS
+  NAT -.-x SYS

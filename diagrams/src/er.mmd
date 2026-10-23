@@ -1,0 +1,125 @@
+erDiagram
+  USER ||--o{ PATIENT_PROFILE : owns
+  USER ||--o| DOCTOR : "works as"
+  USER ||--o{ NOTIFICATION : receives
+  USER ||--o{ AUDIT_LOG : performs
+  CLINIC ||--o{ DOCTOR : employs
+  SPECIALTY ||--o{ DOCTOR : has
+  DOCTOR ||--o{ SCHEDULE_TEMPLATE : "works by"
+  DOCTOR ||--o{ SCHEDULE_EXCEPTION : has
+  DOCTOR ||--o{ APPOINTMENT : conducts
+  PATIENT_PROFILE ||--o{ APPOINTMENT : books
+  PATIENT_PROFILE ||--o{ REFERRAL : receives
+  DOCTOR ||--o{ REFERRAL : issues
+  SPECIALTY ||--o{ REFERRAL : "refers to"
+  REFERRAL ||--o{ REFERRAL_STEP : "consists of"
+  REFERRAL |o--o{ APPOINTMENT : "is used by"
+  PATIENT_PROFILE ||--o{ WAITLIST_ENTRY : joins
+  SPECIALTY ||--o{ WAITLIST_ENTRY : "wanted"
+
+  USER {
+    uuid id PK
+    string iin UK
+    string phone UK
+    string email
+    string password_hash
+    string role "patient, doctor, clinic_admin, superadmin"
+    string language "kk, ru"
+  }
+  PATIENT_PROFILE {
+    uuid id PK
+    uuid owner_id FK
+    string full_name
+    date birth_date
+    string iin
+    float lat
+    float lon
+    bool is_family_member
+  }
+  CLINIC {
+    uuid id PK
+    string name
+    string address
+    float lat
+    float lon
+    string opening_hours
+  }
+  SPECIALTY {
+    uuid id PK
+    string name_kk
+    string name_ru
+    bool referral_required
+  }
+  DOCTOR {
+    uuid id PK
+    uuid user_id FK
+    uuid clinic_id FK
+    uuid specialty_id FK
+    string room
+    int slot_minutes
+    string languages
+  }
+  SCHEDULE_TEMPLATE {
+    uuid id PK
+    uuid doctor_id FK
+    int weekday
+    time start_time
+    time end_time
+    time break_start
+    time break_end
+  }
+  SCHEDULE_EXCEPTION {
+    uuid id PK
+    uuid doctor_id FK
+    daterange period
+    string kind "vacation, sick_leave, day_off"
+  }
+  APPOINTMENT {
+    uuid id PK
+    uuid patient_id FK
+    uuid doctor_id FK
+    uuid referral_id FK "nullable"
+    tstzrange time_range "EXCLUDE overlap per doctor"
+    string status "booked, cancelled, in_progress, completed, no_show"
+    float no_show_risk
+  }
+  REFERRAL {
+    uuid id PK
+    uuid patient_id FK
+    uuid issued_by FK
+    uuid specialty_id FK
+    string icd10_code
+    string status "issued, used, closed, expired, cancelled"
+    date valid_until
+  }
+  REFERRAL_STEP {
+    uuid id PK
+    uuid referral_id FK
+    int position
+    string service
+    int result_ready_hours
+  }
+  WAITLIST_ENTRY {
+    uuid id PK
+    uuid patient_id FK
+    uuid specialty_id FK
+    uuid doctor_id FK "nullable"
+    daterange wanted_period
+    datetime created_at
+  }
+  NOTIFICATION {
+    uuid id PK
+    uuid user_id FK
+    string channel "email, telegram"
+    string kind
+    datetime send_at
+    string status
+  }
+  AUDIT_LOG {
+    uuid id PK
+    uuid user_id FK
+    string action
+    string object_type
+    uuid object_id
+    datetime created_at
+  }

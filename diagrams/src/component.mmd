@@ -1,0 +1,51 @@
+flowchart LR
+  subgraph Clients
+    WEB["Web app<br/>React + TypeScript"]
+    BOT["Telegram bot<br/>aiogram (v2)"]
+  end
+
+  subgraph Backend["Backend — one Django codebase"]
+    API["REST API /api/v1<br/>Django REST Framework, JWT"]
+    WS["Live queue<br/>Django Channels (WebSocket)"]
+    ADM["Django admin"]
+    subgraph Modules["Domain modules"]
+      ACC["accounts<br/>users, roles, family profiles"]
+      CAT["catalog<br/>clinics, specialties, doctors, rooms"]
+      SCH["scheduling<br/>templates, exceptions,<br/>slot generation and ranking"]
+      BOOK["booking<br/>slot hold, appointments, waitlist"]
+      REF["referrals<br/>lifecycle, patient route (v2)"]
+      NOTI["notifications<br/>email, Telegram"]
+      ANA["analytics"]
+      MLM["ml<br/>no-show model (v2)"]
+      AUD["audit<br/>access log"]
+    end
+    WORK["Celery workers"]
+    BEAT["Celery Beat<br/>scheduled jobs"]
+  end
+
+  PG[("PostgreSQL<br/>exclusion constraint")]
+  RD[("Redis<br/>slot hold, cache,<br/>task broker, channel layer")]
+  SMTP["Email server (SMTP)"]
+  TG["Telegram Bot API"]
+  MAP["Map service<br/>2GIS / Leaflet"]
+  SEN["Sentry"]
+
+  WEB -->|HTTPS + JWT| API
+  WEB -->|WebSocket| WS
+  WEB --> MAP
+  BOT -->|HTTPS + JWT| API
+  BOT <--> TG
+  API --> ACC & CAT & SCH & BOOK & REF & ANA
+  ACC & CAT & SCH & BOOK & REF & ANA & AUD --> PG
+  API --> AUD
+  BOOK -->|SET NX EX| RD
+  WS <--> RD
+  API -->|enqueue| RD
+  BEAT -->|schedule| RD
+  RD --> WORK
+  WORK --> NOTI & MLM & REF
+  NOTI --> SMTP
+  NOTI --> TG
+  ADM --> PG
+  API -.->|errors| SEN
+  WORK -.->|errors| SEN

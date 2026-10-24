@@ -22,7 +22,7 @@ Online booking of outpatient appointments already exists in Kazakhstan: the Damu
 
 The Ministry of Health has publicly acknowledged that in some organizations schedules exist but patients cannot always book on their own ([BES.media](https://bes.media/news/k-vrachu-ne-zapisatsya-minzdrav-vyyavil-ogranicheniya-v-poliklinikah-kazahstana/)), and research on outpatient care shows that no-shows are common and that targeted reminders reduce them (Oikonomidi et al., 2023; see [`03-literature.md`](03-literature.md)).
 
-**Evidence status.** P1–P3 are working hypotheses. They are being verified in two ways: interviews with patients, doctors and registry staff ([`02-relevance.md`](02-relevance.md)) and a hands-on comparison of existing systems ([`04-existing-systems.md`](04-existing-systems.md)). Where the evidence does not confirm a problem, the scope will be adjusted.
+**Evidence status.** P1–P3 were checked in two ways. Interviews with three medical workers and three patients ([`02-relevance.md`](02-relevance.md)) confirmed P3 (lost capacity after no-shows, no reuse of freed slots), P2 (referrals expire while patients wait for a specialist) and, partly, P1 (time spent finding free time); distance as a choice criterion was not confirmed and is evaluated experimentally. A hands-on comparison of five systems ([`04-existing-systems.md`](04-existing-systems.md)) showed that none of them recommends the nearest slot across doctors and clinics or ties referrals to booking.
 
 ---
 
